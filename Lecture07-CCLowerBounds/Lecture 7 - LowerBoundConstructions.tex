@@ -1,0 +1,241 @@
+\input{template}
+\input{macros}
+\begin{document}
+\lecture{7}{Communication Lower Bounds}{Put Scribe Name Here}
+\disclaimer 
+\section{Logistics}
+First homework will be posted soon. 
+
+\section{Outline}
+This class will just present a list of constructions proving communication lower bounds in various settings. Many of them are simple, few of them are advanced and may skip details. Just in case some people haven't seen communication complexity before, I'll quickly go through the basic arguments to start.
+
+\begin{definition} A two-party communication problem consists of a boolean function $f:\{0,1\}^a \times \{0,1\}^b \rightarrow \{0,1\}$ (for this entire lecture, let $a = b = k$). Alice is given some input $A \in \{0,1\}^a$ (but doesn't know anything about $B$), and Bob is given some input $B \in \{0,1\}^b$ (but doesn't know anything about $A$). Their goal is to compute $f(A, B)$. 
+\end{definition}
+\begin{definition} A \emph{deterministic communication protocol} for $f$ specifies for Alice, as a function of her input $A$ and all messages sent so far $a_1, b_1,\ldots, a_\ell, b_\ell$, what message $a_{\ell+1}$ to send next. It also specifies for Bob, as a function of his input $B$ and all messages sent so far what message $b_{\ell+1}$ to send next. We'll be interested in the \emph{communication complexity} of a protocol: the maximum number of bits ever sent in total between Alice and Bob. 
+\end{definition}
+
+\begin{Exa}[Equality] $f(A, B) = 1$ if and only if $A = B$. One protocol to solve this is the following: Alice and Bob both output their entire string in the first round, and declare $1$ if and only if their outputs match. A slightly more clever protocol might have Alice and Bob each output the first bit of their string and see if they match. If so, continue. If not, output $0$. If they make it all the way to the end without stopping, output $1$.
+\end{Exa}
+
+\begin{Exa}[Disjointness] For this problem, it will make more sense to think of $A$ as a subset of $[k]$ (the coordinates which are $1$), and $B$ as a subset of $[k]$. Then consider $f(A, B) = 1$ if and only if $A \cap B = \emptyset$. One protocol to solve this is the following: Alice and Bob both output their entire set, and declare $1$ if and only if their outputs match.\end{Exa}
+
+Both examples are core problems for communication complexity. Interestingly, the natural procedures we posed seem to basically communicate the entire input in the worst case. It turns out that this is because the protocols are (almost) optimal (among deterministic protocols). We'll prove this using a generic type of argument, called a \emph{fooling set argument}. The main idea is the following: Imagine for instance that the complete transcript (that is, all messages sent by Alice and all messages sent by Bob, in order) are identical for inputs $(A_1, B_1)$ and $(A_2, B_2)$. Then we claim that the transcripts must also be identical for $(A_1, B_2)$ and $(A_2, B_1)$.
+
+\begin{observation}[Rectangles] Let $T(A, B)$ denote the complete transcript (all messages sent, in order, and their final answers) produced by Alice and Bob using a communication protocol on input $(A, B)$. Then if $T(A_1, B_1) = T(A_2, B_2)$, $T(A_1, B_1) = T(A_2, B_1) = T(A_1, B_2) = T(A_2, B_2)$ as well. Therefore, the protocol gives the same answer on all four input pairs.
+\end{observation}
+\begin{proof}
+Assume for contradiction that this were not the case, and w.l.o.g. say that the different transcript is $T(A_1, B_2) \neq T(A_2, B_2)$. Because the protocol is deterministic, and Bob has the same input in both instances, Bob will continue outputting the same message every round until Alice sends a different message. Therefore, in order for $T(A_1, B_2)$ to possibly not equal $T(A_2, B_2)$, it must be the case that Alice sends the first different message. However, because $T(A_1, B_1) = T(A_2, B_2)$, we also have $T(A_1, B_2) \neq T(A_1, B_1)$. By exactly the same reasoning, Alice will only send a different message if Bob sends a different message first. Since it is not possible for both Alice and Bob to wait for the other to send a different message, one of the non-equalities must be violated. So all four transcripts must be the same.
+\end{proof}
+
+The above is called a ``rectangle argument'' because if we were to draw a matrix where the rows are Alice's input and columns are Bob's, it means that entries that share the same transcript must form a rectangle (okay, not exactly, but for every transcript $T$, there exists a relabeling of the rows/columns so that the pairs that induce this transcript are a rectangle). It seems quite simple but is surprisingly powerful because if protocols use limited communication, it must be the case that multiple inputs have the same transcript, and the rectangle argument lets us conclude that other inputs necessarily use the same transcript as well. 
+
+\begin{definition}
+A \emph{fooling set} for the function $f$ is a set $F \subseteq \{0,1\}^k \times \{0,1\}^k$ such that:
+\begin{itemize}
+\item $f(A, B) = 1$ for all $(A, B) \in F$.
+\item For every $(A_1, B_1), (A_2, B_2) \in F$, either $f(A_1, B_2) \neq 1$ or $f(A_2, B_1) \neq 1$ (or both). 
+\end{itemize}
+\end{definition}
+
+\begin{proposition}Let $F$ be a fooling set for $f$. Then the deterministic communication complexity of $f$ is at least $\log_2(|F|)$.
+\end{proposition}
+\begin{proof}
+Assume for contradiction that there exists a deterministic protocol with communication $< \log_2(|F|)$. Then by the pigeonhole principle, there exists some $(A_1, B_1), (A_2, B_2) \in F$ such that $T(A_1, B_1) = T(A_2, B_2)$. By the rectangle argument, this necessarily implies $T(A_1, B_2) = T(A_2, B_1) = T(A_1, B_1)$ as well. This means that if the protocol is correct, we must have $f(A_1, B_2) = f(A_2, B_1) = 1$ as well.
+
+However, this directly contradicts the second property of fooling sets.
+\end{proof}
+
+So if a function admits a large fooling set, it is provably impossible to have a short deterministic communication protocol. The remaining work is just to show that both Equality and Disjointness admit large fooling sets.
+
+\begin{proposition} Equality admits a fooling set of size $2^k$. 
+
+\end{proposition}
+\begin{proof}
+Let $F = (X, X)$, for all $X \subseteq \{0,1\}^k$. Then $f(A, B) = 1$ for all $(A, B) \in F$. But $F(A_1, B_2) = 0$ for all $A_1 \neq B_2$. So the second property of the fooling set is satisfied. 
+\end{proof}
+
+Notice that after unraveling all the definitions, the proof is essentially saying the following: if you had a deterministic protocol that used $< k$ bits, there are two inputs of the form $(X, X)$, $(Y, Y)$ that are treated exactly the same. This protocol must therefore also treat $(X, Y)$ and $(Y, X)$ the same as $(X, X)$, which Equality treats differently. That is, the protocol is ``fooled'' into thinking the input is $(X, X)$ or $(Y, Y)$ when it really could be $(X, Y)$ or $(Y, X)$, and this matters.
+
+\begin{proposition}Disjointness admits a fooling set of size $2^k$.
+
+\end{proposition}
+\begin{proof}
+Let $F = (X, \bar{X})$, for all $X \subseteq [k]$. Then $f(A, B) = 1$ for all $(A, B) \in F$. But now consider any $(X, \bar{X}), (Y, \bar{Y}) \in F$. It cannot be the case that $X \cap \bar{Y} = \emptyset$ \textbf{and} $Y \cap \bar{X} = \emptyset$ unless $Y = X$. The former implies that $X \subseteq Y$ and the latter implies that $Y \subseteq X$. Therefore, either $f(X, \bar{Y}) = 0$ or $f(Y, \bar{X} ) = 0$. 
+\end{proof}
+
+So both protocols necessarily require communication $k$ to solve deterministically. It turns out that both problems are also hard to solve \emph{nondeterministically}. Disjointness is also hard to solve with a randomized protocol, but Equality can be solved with high probability with very low randomized communication. 
+
+\subsection{Multi-party communication}
+We'll also talk about multi-party communication instead of just two parties - this will be relevant when figuring out how good combinatorial auctions we should possibly hope for. Here, there's again a boolean function $f$ but it takes as input $X_1, \ldots, X_n$. Various input models are studied, but we'll only talk about the \emph{number-in-hand} model, where player $i$ knows only $X_i$ and nothing else. 
+
+We'll also want a canonical hard problem to start with, multi-disjointness. It also introduces a new concept, called a \emph{promise problem}.
+\begin{Exa}[Multi-Disjointness] $f(X_1,\ldots, X_n) = 1$ iff $X_i \cap X_j = \emptyset$ for all $i \neq j$. Moreover, we'll be interested in the \emph{promise problem}, where the protocol is promised that one of the following is true about the input:
+\begin{itemize}
+\item $X_i \cap X_j = \emptyset$ for all $i \neq j$.
+\item $\cap_i X_i \neq \emptyset$ (there exists an $\ell$ in all $X_i$). 
+\end{itemize}
+More clearly, we say that a communication protocol solves Multi-Disjointness if it outputs $1$ whenever $X_i \cap X_j = \emptyset$ for all $i \neq j$, $0$ whenveer $\cap_i X_i \neq \emptyset$, and is allowed to behave arbitrarily if neither condition holds.
+\end{Exa}
+
+\begin{theorem}[\cite{NisanS06}]Every deterministic protocol for multi-disjointness has communication complexity $\Omega(k/n)$. 
+\end{theorem}
+\begin{proof}
+First, observe that an analog of the rectangles argument holds in multi-party communication as well: if $T(X_1,\ldots, X_n) = T(Y_1,\ldots, Y_n)$, then $T(Z_1,\ldots, Z_n) = T(X_1,\ldots, X_n)$ whenever $Z_i \in \{X_i, Y_i\}$. The proof is the same: if not, there must be some player who is the first to send a different message. But their input matches their input in one of the two cases $(X_1,\ldots, X_n), (Y_1,\ldots, Y_n)$, so this is a contradiction.
+
+The fooling set argument also extends, but we'll use the same concepts slightly differently below. We'll first show that no protocol can use the same $1$ transcript for more than $n^k$ inputs. Consider some set $S$ of inputs that share the same transcript, and assume for contradiction that there exists an $\ell$ such that for all $i$, there exists an input $(X_1,\ldots, X_n)\in F$ with $\ell \in X_i$. Then by the rectangle argument, this same transcript is used for the input $(Y_1,\ldots, Y_n)$, where $\ell \in Y_i$ for all $i$, contradicting the correctness of the protocol. This means that for every $\ell$, there must exist a player who does not have element $\ell$ in any of their inputs in $S$. So now we can count such inputs: for every such input, define $p(\ell)$ to be the lowest-indexed player who never has item $\ell$. Then every input in $S$ has $\ell \notin X_{p(\ell)}$. There are $n-1$ other players who all may or may not be interested in item $\ell$, but all sets are pairwise disjoint, so at most one player can have $\ell \in X_i$. So there are $n$ choices (one of the $n-1$ players, or none at all) done independently over $k$ items, and there are at most $n^k$ instances covered by a single transcript.
+
+Finally, we just want to show that there are $(n+1)^k$ instances where the protocol must output $1$, meaning that there are at least $\log_2((1+1/n)^k)$ different transcripts. To count the number of instances where the protocol must output $1$, observe that each such instance can be selected by choosing, for each item, a player (or none at all) who has that item in $X_i$. There are $n+1$ choices, independently for all items, so this is $(n+1)^k$. 
+
+So immediately we conclude a lower bound of $n\log_2(1+1/n) = \Theta(k/n)$. 
+\end{proof}
+
+\section{Monotone Valuations}
+First, we'll present a lower bound for monotone valuations, by reduction from MultiDisjointness.
+
+\begin{theorem}[\cite{NisanS06}]The communication required to guarantee strictly better than an $n$-approximation for welfare maximization with $m$ items on all monotone valuations is $2^{\Omega(m/n^2)}$. Note that this implies that exponential communication among the bidders is necessary in order to guarantee that an allocation is within a factor of $n$ of optimal when $n = m^{1/2-\varepsilon}$. 
+\end{theorem}
+\begin{proof}
+First, assume that we have the following construction of partitions: $\{T_1^\ell,\ldots, T_n^\ell\}_{\ell \in [k]}$, where for all $\ell$, $T_i^\ell \cap T_j^\ell = \emptyset$, but for all $\ell \neq \ell'$, $T_j^\ell \cap T_i^{\ell'} \neq \emptyset$. That is, we can assign each bidder $T_i^\ell$ for the same $\ell$, but not mix and match across different $\ell$s. 
+
+Now, consider the following class of valuations, called \emph{multi-minded}, or \emph{coverage} valuations: bidder $i$ has some subset $X_i \subseteq [k]$, and $v_i(S) = 1$ if and only if $T_i^\ell \subseteq S$ for some $\ell \in X_i$ (and $v_i(S) = 0$ otherwise). That is, bidder $i$ ``likes'' all the sets $T_i^\ell$, for $\ell \in X_i$, and gets value $1$ as long as they get some set they like. 
+
+Observe that if there exists a single $\ell \in \cap_i X_i$, then it is possible to achieve welfare $n$: simply give each bidder set $T_i^\ell$ for the $\ell \in \cap_i X_i$. Also, observe that if it is possible for both bidder $i$ and bidder $j$ to get value $1$, then the sets that they receive and are interested in must be disjoint, and therefore must have the same $\ell$. So if for all $i, j$, $X_i \cap X_j = \emptyset$, then there is no way for both bidder $i$ and bidder $j$ to get non-zero welfare, and the maximum possible welfare is $1$. So by a direct reduction to MultiDisjointness, the communication complexity of determining whether the welfare is $\geq n$ or $\leq 1$ is at least $\Omega(k/n)$. 
+
+Now, we just need to figure out how big of a $k$ we can have while still guaranteeing a construction of the following form. Consider $k$ random partitions of $[m]$. That is, each item is independently and uniformly awarded to a bidder, and $T_i^\ell$ is the set of items awarded to bidder $i$ in partition $\ell$. Clearly, this satisfies the first property: for all $\ell$, the $T_i^\ell$s indeed form a partition, by definition. We just need to make sure we don't take too many random partitions so that we have bad luck and some $T_i^\ell \cap T_j^{\ell'}= \emptyset$. 
+
+So consider a fixed $T_i^\ell, T_j^{\ell'}$. What is the probability that they don't intersect? This is the probability that for each item $x$, it is either not put into $T_i^\ell$ or not put into $T_j^{\ell'}$. This happens with probability $1-1/n^2$. So the probability that this happens for every item is exactly $(1-1/n^2)^m \approx e^{-m/n^2}$. Now just take a union bound over all $(kn)^2$ sets, and we get that the probability that any two sets happen to be disjoint by bad luck is $\approx k^2n^2 e^{-m/n^2}$. Therefore, we can take $k = 2^{\Omega(m/n^2)}$ and get a non-zero probability of success (even if we can't find this instance efficiently, it exists, so we can use that for the construction and proof). 
+
+So to wrap up: we need a construction of the form at the beginning of the proof for large $k$. The argument above provides a construction for $k = 2^{\Omega(m/n^2)}$, which completes the proof. 
+\end{proof}
+
+Recall that we have protocols matching this: a $\sqrt{m}$-approximation due to~\cite{LaviS05, DobzinskiNS05}, or the trivial $n$-approximation which just allocates randomly (both of the previous results would also guarantee an $n$-approximation). 
+
+\section{Subadditive Valuations}
+\begin{theorem}[\cite{DobzinskiNS05}]The communication required to guarantee strictly better than a $(1/2+1/(2n))$-approximation for welfare maximization with $m$ items on all subadditive valuations is $2^{\Omega(m/n^2)}$.
+\end{theorem}
+\begin{proof} Again, assume that we have the following construction of partitions: $\{T_1^\ell,\ldots, T_n^\ell\}_{\ell \in [k]}$, where for all $\ell$, $T_i^\ell \cap T_j^\ell = \emptyset$, but for all $\ell \neq \ell'$, $T_j^\ell \cap T_i^{\ell'} \neq \emptyset$. That is, we can assign each bidder $T_i^\ell$ for the same $\ell$, but not mix and match across different $\ell$s.
+
+Observe that the previous construction is not subadditive. In particular, player's have value $1$ for some sets, while having value $0$ for every proper subset. The only change we'll make is to bump up the players' values for every non-empty subset by $1$. 
+
+That is, bidder $i$ has some subset $X_i \subseteq [k]$, and $v_i(S) = 2$ if and only if $T_i^\ell \subseteq S$ for some $\ell \in X_i$ (and $v_i(S) = 1$ otherwise). This function is now clearly subadditive: any two non-trivial sets have value one, and no set has value more than two. 
+
+The only difference is in the welfare guarantee we can claim. Now, if we're in the disjoint case, we can certainly get welfare $2n$. But even in the non-disjoint case, we can get welfare $n+1$ (one player can get a set they like, and everyone else gets a single item). So our lower bound is now only $2n/(n+1)$ instead of $n$. 
+\end{proof}
+
+Recall that we have a 2-approximation (that we didn't see) due to~\cite{Feige06}. This is asymptotically tight as $n\rightarrow \infty$, but not for small $n$ (actually, the algorithm is tight for small $n$, and the lower bound can be improved, see later section). 
+
+\section{XOS Valuations}
+\begin{theorem}[\cite{DobzinskiNS05}]The communication required to guarantee strictly better than a $1-(1-1/n)^n$-approximation for welfare maximization with $m$ items on all XOS valuations is $2^{\Omega(m/n^2)}$.
+\end{theorem}
+
+\begin{proof}
+This time, we'll need a slightly stronger construction (actually, the same construction works, we just need to appeal to a stronger property). This time, assume that we have the following construction of partitions: $\{T_1^\ell,\ldots, T_n^\ell\}_{\ell \in [k]}$, where for all $\ell$, $T_i^\ell \cap T_j^\ell = \emptyset$, but for all $\ell_1,\ldots, \ell_n$ (all distinct) we have $|\cup_i T_i^{\ell_i}| \leq m\cdot (1-(1-1/n)^n)$. 
+
+Now, consider the following class of valuations. First, for all $\ell$ define an additive valuation $v_i^\ell(S) := |S \cap T_i^\ell|$ (that is, value one per item in $T_i^\ell$). Next, give each bidder some set $X_i$ of indices, and define $v_i(S) := \max_{\ell \in X_i} v_i^\ell(S)$. This is clearly XOS (even Binary XOS). 
+
+Observe again that if there exists a single $\ell \in \cap_i X_i$, then it is possible to achieve welfare $m$: simply give each bidder set $T_i^\ell$ for the $\ell \in \cap_i X_i$. But now the welfare might be better in the ``no'' case, because the bidders will still get value $1$ per item even if they barely overlap with their sets. Indeed, the welfare can be as large as $m \cdot (1-(1-1/n)^n)$.
+
+Again, we just need to figure out how big of a $k$ we can have while still guaranteeing a construction of the desired form. Again consider $k$ random partitions of $[m]$. That is, each item is independently and uniformly awarded to a bidder, and $T_i^\ell$ is the set of items awarded to bidder $i$ in partition $\ell$. Clearly, this satisfies the first property: for all $\ell$, the $T_i^\ell$s indeed form a partition, by definition. We just need to make sure we don't take too many random partitions so that we have bad luck and some $T_i^\ell \cap T_j^{\ell'}= \emptyset$. 
+
+Consider a fixed set of distinct indices $\ell_1,\ldots, \ell_n$. Then the expected number of items in their union is exactly $1-(1-1/n)^n \cdot m$ (because for any item to miss the union, it needs to be missed independently $n$ times). The probability that it deviates from its expectation by more than $\varepsilon \cdot m$ is upper bounded by $e^{-\varepsilon^2 m/2}$. So taking a union bound over all $\leq k^n$ distinct indices, we get that this holds for all indices with probability $e^{-\varepsilon^2 m/2 + n\log k}$. Setting $n \log k = \varepsilon^2 m/8$ results in $k \leq e^{O(m\varepsilon^2/n)}$. We could, for instance, let $\varepsilon = 1/\sqrt{n}$, giving the bound in the theorem statement (but there are other interesting choices of $\varepsilon$ too). 
+\end{proof}
+
+\section{XOS Simultaneous Lower Bound}
+Consider the following construction:
+
+\begin{enumerate}
+\item $S$ is drawn uniformly at random from sets of size $m/2$.
+\item $T$ is drawn uniformly at random from sets of size $m/2$, \textbf{conditioned on $|S \cap T| = m/3$.}
+\item Let $a_1,\ldots, a_k$ be uniformly random sets of size $m/2$, conditioned on $|S \cap a_i| = m/3$.
+\item Alice's initial BXOS function has $A(X) = \max_i \{|a_i \cap X|\}$. 
+\item Let $b_1,\ldots, b_k$ be uniformly random sets of size $m/2$, conditioned on $T \cap a_i| = m/3$. 
+\item Bob's initial BXOS function has $B(X) = \max_i \{|b_i \cap X\}$. 
+\item Let $Y$ be a uniformly random set satisfying $|Y \cap S| = |\bar{Y} \cap T| = m/3$. Let $Z$ be a uniformly random set satisfying $|Y \cap S| = |Y \cap T| = m/3$. With probability $1/2$, set $v^A(X) = \max\{A(X),|Y \cap X|\}$ and $v^B(X) = \max\{B(X), |\bar{Y} \cap X|\}$. With probability $1/2$ set $v^A(X) = \max\{A(X), |Z \cap X|\}$ and $v^B(X) = \max\{B(X), |Z\cap X|\}$. 
+\end{enumerate}
+
+\begin{theorem}[\cite{BravermanMW18}] No simultaneous protocol with subexponential in $m$ communication can beat a $(3/4-1/108)$ approximation on the above construction with probability $> 2/3$ for decision.
+
+\end{theorem}
+
+We'll present the following steps, without proof.
+\begin{enumerate}
+\item For sufficiently small $k$, but $k = exp(m)$, the maximum welfare between $A$ and $B$ $(3/4-1/108)m$. This is basically because the union of any two sets constructed as in steps 1 thru 6 is $(3/4-1/108)m$. 
+\item If we do the first case in step one, the maximum achievable welfare between $v^A$ and $v^B$ is $m$.
+\item In the second case, the maximum achievable welfare between $v^A$ and $v^B$ is $(3/4-1/108)m$. This is essentially because the additional sets are no better than another random set.
+\item In either case, it is impossible for Alice to distinguish which of her sets is this special one. Ditto for Bob.
+\item Therefore, in order to possibly solve the decision problem, Alice or Bob would have to convey some information about every single one of their sets, which is exponential. (This can be made into a formal statement, but we won't prove that in this class). 
+\end{enumerate}
+
+Observe that with two rounds, Alice could first send Bob the set $S$ (which is painfully obvious by her construction), and Bob could then determine which set he has that is ``special.''
+
+Also observe that for search, Alice will just pick a random $i$ and keep the items in $a_i$ and give the rest to Bob. This will get the right welfare approximation in both cases (it will just get different absolute welfare in both). 
+
+\section{Subadditive Lower Bound for Two Players}
+Consider the following construction, which is well-defined for any collection $S$ of subsets: for a given set $T$, say that $T$ is covered by collection $Z$ of sets if $\cup_{z \in Z} z \supseteq T$. Let $f_S(T)$ be the minimum number of sets in $S$ that cover $T$. 
+
+\begin{lemma}$f_S(\cdot)$ is subadditive for all $S$.
+\end{lemma}
+\begin{proof}
+Let $Z$ cover $T$ and $Y$ cover $U$. Then clearly $Z \cup Y$ covers $T \cup U$. Therefore, if $Z$ and $Y$ are the minimum covers of $T$ and $U$ respectively, we have that $f_S(T \cup U) \leq |Z|+|Y| = f_S(T) + f_S(U)$.
+\end{proof}
+
+Now, we wish to further modify $f_S(\cdot)$ into $f_S^\ell(\cdot)$ as follows:
+\begin{itemize}
+\item If $f_S(X) < \ell/2$, $f_S^\ell(X) = f_S(X)$.
+\item If $f_S(\bar{X}) < \ell/2$, $f_S^\ell(X) = \ell - f_S(\bar{X})$.
+\item If neither, then $f_S^\ell(X) = \ell/2$.
+\end{itemize}
+
+Observe that $f_S^\ell(\cdot)$ might not be well-defined (the first two bullets might conflict). But for $S$ with the right properties, it is always well-defined. 
+
+\begin{definition}[$\ell$-sparse] We say that $\mathcal{S}$ is \emph{$\ell$-sparse} if for all $T_1,\ldots, T_{\ell-1} \in \mathcal{S}$, $\cup_j T_j \neq M$. \end{definition}
+
+\begin{lemma}
+If $\mathcal{S}$ is $\ell$-sparse, then $f^\ell_\mathcal{S}(\cdot)$ is well-defined.
+\end{lemma}
+
+\begin{proof}
+It is clear that $f^\ell_\mathcal{S}(X)$ is always defined at least once. The only way in which $f^\ell_\mathcal{S}(X)$ could be defined multiple times is if $\sigma_\mathcal{S}(X) < \frac{\ell}{2}$ (in which case $f^\ell_\mathcal{S}(X) = \sigma_\mathcal{S}(X)$) and $\sigma_\mathcal{S}(\overline{X}) < \frac{\ell}{2}$ (in which case $f^\ell_\mathcal{S}(X) = \ell - \sigma_\mathcal{S}(\overline{X})$). 
+
+So assume for contradiction that both events hold, and let $X \subseteq \cup_{i=1}^{\ell/2-1} T_i$, and $\overline{X} \subseteq \cup_{i=1}^{\ell/2-1} U_i$, where each $T_i, U_i \in \mathcal{S}$. Note that $\sigma_\mathcal{S}(X), \sigma_\mathcal{S}(\overline{X}) < \ell/2$ implies that such $T_i, U_i$ must exist. But now consider that we can write $M = X \cup \overline{X}$ as a union of $\leq \ell -2$ elements of $\mathcal{S}$, contradicting that $\mathcal{S}$ is $\ell$-sparse.
+\end{proof}
+That is, $\mathcal{S}$ is $\ell$-sparse if there does not exist $\ell-1$ elements of $\mathcal{S}$ whose union is the entire ground set $M$. 
+
+\begin{proposition}
+If $\mathcal{S}$ is $\ell$-sparse, then $f^\ell_\mathcal{S}(\cdot)$ is monotone and subadditive.
+\end{proposition}
+
+(Proof omitted). So now we have a class of subadditive functions. We now wish to come up with a hard instance. To this effect, we need one further definition.
+
+\begin{definition}[\cite{KleitmanS73}]
+	A collection $\mathcal{S} = \{S_1,\ldots, S_k\}$ is \emph{$\ell$-independent} if $\{T_1,\ldots, T_k\}$ is $\ell$-sparse whenever $T_i \in \{S_i, \overline{S_i}\}$. 
+\end{definition}
+
+\begin{proposition}\label{prop:lindependent}Let $\mathcal{S}$ be an $\ell$-independent collection with $|\mathcal{S}| = k$. Then any deterministic communication protocol that guarantees a $(\frac{1}{2} + \frac{1}{2\ell-3})$-approximation to the optimal welfare for two monotone subadditive bidders requires communication at least $k$. 
+\end{proposition}
+
+\begin{proof}
+Let $\mathcal{S} = \{S_1,\ldots, S_k\}$ be $\ell$-independent. For each $i$, define $S_i^1:= S_i$, and $S_i^0 := \overline{S_i}$. Now, consider an instance of EQUALITY where Alice is given $a$ and Bob is given $b$. Alice will create the valuation function $f^\ell_\mathcal{A}$, where $\mathcal{A}:=\{S_1^{a_1},\ldots, S_k^{a_k}\}$ (i.e. Alice builds $\mathcal{A}$ by taking either $S_i^1$ or $S_i^0$, depending on $a_i$). Bob will create the valuation function $f^\ell_\mathcal{B}$, where $\mathcal{B}:=\{S_1^{b_1},\ldots, S_k^{b_k}\}$. Observe first that $f^\ell_\mathcal{A}(\cdot)$ and $f^\ell_\mathcal{B}(\cdot)$ are indeed well-defined, monotone, and subadditive as $\mathcal{S}$ is $\ell$-independent (and therefore $\mathcal{A}$ and $\mathcal{B}$ are both $\ell$-sparse). 
+
+Observe that if $a = b$, then $\mathcal{A} = \mathcal{B}$ and moreover $f^\ell_\mathcal{A}(\cdot) = f^\ell_\mathcal{B}(\cdot)$. Observe that for any $S, \ell$ we have $f_S^\ell(X) + f_S^\ell(\bar{X}) =\ell$, so the maximum achievable welfare is $\ell$.
+
+On the other hand, if there exists an $i$ such that $a_i \neq b_i$ (without loss of generality say that $a_i = 1$ and $b_i = 0$), we claim that welfare $2\ell-2$ is achievable. To see this, consider the allocation which awards $\overline{S_i}$ to Alice and $S_i$ to Bob. Indeed, $f^\ell_\mathcal{A}(S_i) = 1$ (as $S_i \in \mathcal{A}$), so $f^\ell_\mathcal{A}(\overline{S_i}) = \ell - 1$. Similarly, $f_B(\overline{S_i}) = 1$, so $f_B(S_i) = \ell - 1$, achieving total welfare $2(\ell-1)$.\footnote{As an aside, note that welfare exceeding $2\ell-2$ is not possible, as Alice and Bob each value all non-empty sets at least at $1$, and therefore value all strict subsets of $M$ at most at $\ell-1$ by \ref{lminus}. Therefore, the only way Alice or Bob could have value exceeding $\ell-1$ is to get all of $M$, meaning that hte other player receives value $0$.} 
+
+So assume for contradiction that a deterministic $\frac{1}{2} + \frac{1}{2\ell-3} > \frac{\ell}{2\ell-2}$-approximation exists to the optimal welfare for two monotone subadditive bidders with communication $< k$. Then such a protocol would solve EQUALITY with communication $<k$ by the reduction above, a contradiction.
+\end{proof}
+
+\begin{lemma}
+\label{lem:l-indep-exist}
+For all $m$, $x > 1$, and $\ell = \log_2(m) - \log_2(x)$, there exists a $\ell$-independent collection of subsets of $[m]$ of size $k = e^{x/\ell}$.
+\end{lemma}
+
+\section{Possible Project Topics}
+\begin{itemize}
+\item See if the presented subadditive construction ``separates'' XOS from subadditive in other cases where good algorithms for subadditive aren't known but good ones for XOS are (ask me for examples). 
+\end{itemize}
+
+\bibliographystyle{alpha}
+\bibliography{../../MasterBib}
+
+
+\end{document}
