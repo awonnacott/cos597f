@@ -1,9 +1,14 @@
 \input{template}
 \input{macros}
 
+\usepackage{dsfont}
+
 \theoremstyle{plain}
 \theorembodyfont{\rmfamily} 
 \newtheorem*{claim}{Claim:}
+
+\renewcommand{\P}[1]{\mathds{P}\left[{#1}\right]}
+\newcommand{\E}[1]{\mathds{E}\left[{#1}\right]}
 
 \begin{document}
 
@@ -193,7 +198,7 @@
       and is allowed to behave arbitrarily if neither condition holds.
     \end{Exa}
 
-    \begin{theorem}[\cite{NisanPackCover02}]
+    \begin{theorem}[\cite{NisanPackCover02}, theorem 2]
       Every deterministic protocol for
       multi-disjointness has communication complexity $\Omega(k/n)$.
     \end{theorem}
@@ -258,7 +263,7 @@
   First, we'll present a lower bound for monotone
   valuations, by reduction from MultiDisjointness.
 
-  \begin{theorem}[\cite{NisanPackCover02}]
+  \begin{theorem}[\cite{NisanPackCover02} Theorem 3]
     The communication required to guarantee strictly
     better than an $n$-approximation for welfare maximization with $m$ items on all
     monotone valuations is $2^{\Omega(m/n^2)}$. Note that this implies that
@@ -267,16 +272,21 @@
     m^{1/2-\varepsilon}$.
   \end{theorem}
   \begin{proof}
-    Let $k$ be an integer we'll tune later.
+    Think of $m \gg n$ and let $k$ be an integer we'll tune later.
     First, assume that we have
     a $k$-size family of length-$n$ partitions of items $M$, say
     $\{(T_1^\ell,\ldots, T_n^\ell)\}_{\ell \in [k]}$,
-    where for all $\ell$, $T_i^\ell \cap T_j^\ell = \emptyset$.
+    where for all $\ell$, $T_i^\ell \cap T_j^\ell = \emptyset$ (note\footnote{
+      Incidentally, when we actually construct this collection,
+      we'll get \emph{actual} partitions, i.e. $\bigcup_i T_i^\ell = M$
+      for each $\ell$.
+      However, this is unimportant for our reduction.
+    }).
     Additionally, we require that for
     all $\ell \neq \ell'$, $T_j^\ell \cap T_i^{\ell'} \neq \emptyset$;
-    in other words the disjointness property does not mix and match
+    in other words the disjointness property does not ever mix and match
     across different partitions.
-    We will assign bidder $i$ to the (some sub collection of) the sets
+    We will associate bidder $i$ to the (some sub collection of) the sets
     $\{T^\ell_i\}$.
     % The condition that $(T_1^\ell,\ldots, T_n^\ell)$ are disjoint will
     % correspond to situations where every bidder can be satisfied,
@@ -313,12 +323,28 @@
     sure we don't take too many random partitions so that we have bad luck and some
     $T_i^\ell \cap T_j^{\ell'}= \emptyset$. 
 
-    So consider a fixed $T_i^\ell, T_j^{\ell'}$. What is the probability that they
-    don't intersect? This is the probability that for each item $x$, it is either
-    not put into $T_i^\ell$ or not put into $T_j^{\ell'}$. This happens with
-    probability $1-1/n^2$. So the probability that this happens for every item is
-    exactly $(1-1/n^2)^m \approx e^{-m/n^2}$. Now just take a union bound over all
-    $(kn)^2$ sets, and we get that the probability that any two sets happen to be
+    So consider a fixed $T_i^\ell, T_j^{\ell'}$ for $\ell\ne\ell'$.
+    What is the probability that they don't intersect?
+    This is the probability that for each item $x$, it is either
+    not put into $T_i^\ell$ or not put into $T_j^{\ell'}$.
+    Because partitions are selected independently, we get
+    \begin{align*}
+      \P{x\notin T_i^\ell \vee x\notin T_j^{\ell'}}
+        = 1 - \P{x\in T_i^\ell \wedge x\in T_j^{\ell'}}
+        = 1 - 1/n^2
+    \end{align*}
+    And because items are allocated independently, we get 
+    \begin{align*}
+      \P{ T_i^\ell \cap T_j^{\ell'} = \emptyset} 
+      = \prod_{x\in M} \P{x\notin T_i^\ell \vee x\notin T_j^{\ell'}}
+      = (1 - 1/n^2)^m
+      \approx e^{-m/n^2}
+    \end{align*}
+    % So the probability that this happens for every item is
+    % exactly $(1-1/n^2)^m$.
+    Now just take a union bound over all $kn\cdot(k-1)n\le (kn)^2$ 
+    pairs of sets which we need to have disjoint.
+    We get that the probability that any two sets happen to be
     disjoint by bad luck is $\approx k^2n^2 e^{-m/n^2}$. Therefore, we can take $k =
     2^{\Omega(m/n^2)}$ and get a non-zero probability of success (even if we can't
     find this instance efficiently, it exists, so we can use that for the
@@ -344,19 +370,20 @@
   \end{theorem} 
   \begin{proof}
     Again, assume that we have the following construction of partitions:
-    $\{T_1^\ell,\ldots, T_n^\ell\}_{\ell \in [k]}$, where for all $\ell$,
+    $\{(T_1^\ell,\ldots, T_n^\ell)\}_{\ell \in [k]}$, where for all $\ell$,
     $T_i^\ell \cap T_j^\ell = \emptyset$, but for all $\ell \neq \ell'$,
-    $T_j^\ell \cap T_i^{\ell'} \neq \emptyset$. That is, we can assign each
-    bidder $T_i^\ell$ for the same $\ell$, but not mix and match across
-    different $\ell$s.
+    $T_j^\ell \cap T_i^{\ell'} \neq \emptyset$.
+    % That is, we can assign each
+    % bidder $T_i^\ell$ for the same $\ell$, but not mix and match across
+    % different $\ell$s.
 
     Observe that the previous construction is not subadditive. In particular,
     player's have value $1$ for some sets, while having value $0$ for every proper
     subset. The only change we'll make is to bump up the players' values for every
-    non-empty subset by $1$. 
-
-    That is, bidder $i$ has some subset $X_i \subseteq [k]$, and $v_i(S) = 2$ if and
-    only if $T_i^\ell \subseteq S$ for some $\ell \in X_i$ (and $v_i(S) = 1$
+    non-empty subset by $1$.
+    Specifically, bidder $i$ has some subset $X_i \subseteq [k]$,
+    and $v_i(S) = 2$ if
+    $T_i^\ell \subseteq S$ for some $\ell \in X_i$ (and $v_i(S) = 1$
     otherwise). This function is now clearly subadditive: any two non-trivial sets
     have value one, and no set has value more than two. 
 
@@ -398,8 +425,12 @@
   possible to achieve welfare $m$: simply give each bidder set $T_i^\ell$ for the
   $\ell \in \cap_i X_i$. But now the welfare might be better in the ``no'' case,
   because the bidders will still get value $1$ per item even if they barely
-  overlap with their sets. Indeed, the welfare can be as large as $m \cdot
-  (1-(1-1/n)^n)$.
+  overlap with their sets. Specifically, if each $X_i$ is disjoint,
+  in any allocation there will be at most
+  $|\cup_i T_i^{\ell_i}|$ items which are valued at $1$
+  (for some $\ell_1,\ldots, \ell_n$ all distinct).
+  Thus, the welfare can only be as large as 
+  $m \cdot (1-(1-1/n)^n)$.
 
   Again, we just need to figure out how big of a $k$ we can have while still
   guaranteeing a construction of the desired form. Again consider $k$ random
@@ -410,6 +441,7 @@
   sure we don't take too many random partitions so that we have bad luck and some
   $T_i^\ell \cap T_j^{\ell'}= \emptyset$. 
 
+  % CHECK THIIIIS
   Consider a fixed set of distinct indices $\ell_1,\ldots, \ell_n$. Then the
   expected number of items in their union is exactly $1-(1-1/n)^n \cdot m$
   (because for any item to miss the union, it needs to be missed independently $n$
@@ -425,58 +457,104 @@
 \section{XOS Simultaneous Lower Bound} 
   Consider the following construction:
 
-  \begin{enumerate} \item $S$ is drawn uniformly at random from sets of size
-      $m/2$.  \item $T$ is drawn uniformly at random from sets of size $m/2$,
-      \textbf{conditioned on $|S \cap T| = m/3$.} \item Let $a_1,\ldots, a_k$ be
-        uniformly random sets of size $m/2$, conditioned on $|S \cap a_i| = m/3$.
-      \item Alice's initial BXOS function has $A(X) = \max_i \{|a_i \cap X|\}$.
-      \item Let $b_1,\ldots, b_k$ be uniformly random sets of size $m/2$,
-        conditioned on $T \cap a_i| = m/3$.  \item Bob's initial BXOS function has
-        $B(X) = \max_i \{|b_i \cap X\}$.  \item Let $Y$ be a uniformly random set
-          satisfying $|Y \cap S| = |\bar{Y} \cap T| = m/3$. Let $Z$ be a uniformly
-          random set satisfying $|Y \cap S| = |Y \cap T| = m/3$. With probability
-          $1/2$, set $v^A(X) = \max\{A(X),|Y \cap X|\}$ and $v^B(X) = \max\{B(X),
-          |\bar{Y} \cap X|\}$. With probability $1/2$ set $v^A(X) = \max\{A(X), |Z
-          \cap X|\}$ and $v^B(X) = \max\{B(X), |Z\cap X|\}$.  \end{enumerate}
+  \begin{enumerate} 
+    \item $S$ is drawn uniformly at random from sets of size $m/2$.
+    \item Let $a_1,\ldots, a_k$ be uniformly random sets of size $m/2$,
+      conditioned on $|S \cap a_i| = m/3$.
+    \item Alice's initial BXOS function has $A(X) = \max_i \{|a_i \cap X|\}$.
+    \item $T$ is drawn uniformly at random from sets of size $m/2$,
+      conditioned on $|S \cap T| = m/3$.
+    \item Let $b_1,\ldots, b_k$ be uniformly random sets of size $m/2$,
+      conditioned on $|T \cap a_i| = m/3$.
+    \item Bob's initial BXOS function has $B(X) = \max_i \{|b_i \cap X|\}$.
+      \begin{itemize}
+        \item Note: if we used BXOS evaluations $A$ and $B$,
+          the maximum achievable welfare would be at most $(3/4 - 1/108)m$
+      \end{itemize}
+    \item Let $Y$ be a uniformly random set
+      satisfying $|Y \cap S| = |\bar{Y} \cap T| = m/3$. \\ 
+      Let $Z$ be a uniformly
+      random set satisfying $|Z \cap S| = |Z \cap T| = m/3$.
+      \begin{enumerate}
+        \item With probability
+          $1/2$, set $v^A(X) = \max\{A(X),|Y \cap X|\}$ \\ 
+          and $v^B(X) = \max\{B(X), |\bar{Y} \cap X|\}$ \\
+          (in this case, the welfare shoots up to $m$).
+        \item With probability $1/2$ set $v^A(X) = \max\{A(X), |Z \cap X|\}$ \\ 
+          and $v^B(X) = \max\{B(X), |Z\cap X|\}$ \\
+          (in this case, the welfare remains approximately the same).
+      \end{enumerate}
+  \end{enumerate}
 
-  \begin{theorem}[\cite{BravermanMW18}] No simultaneous protocol with
+  The following example sets give some intuition for why such sets $S,T,Y,Z$
+  should exist:
+  \begin{center}
+    \begin{tabular}{ c | c c c c c c }
+         & a & b & c & d & e & f \\
+      \hline
+      S: & 1 & 1 & 1 &   &   \\
+      T: &   & 1 & 1 & 1 &   \\
+      Y: & 1 & 1 &   &   & 1 \\
+      Z: &   & 1 & 1 &   & 1
+    \end{tabular}
+  \end{center}
+
+
+
+  \begin{theorem}[\cite{BravermanMW18}] 
+    No simultaneous protocol with
     subexponential in $m$ communication can beat a $(3/4-1/108)$ approximation on
     the above construction with probability $> 2/3$ for decision.
-
   \end{theorem}
-
-  We'll present the following steps, without proof.  \begin{enumerate} \item For
-        sufficiently small $k$, but $k = exp(m)$, the maximum welfare between $A$
-        and $B$ $(3/4-1/108)m$. This is basically because the union of any two
-        sets constructed as in steps 1 thru 6 is $(3/4-1/108)m$.  \item If we do
-        the first case in step one, the maximum achievable welfare between $v^A$
-      and $v^B$ is $m$.  \item In the second case, the maximum achievable welfare
+    We'll present the following steps, without proof.
+    \begin{enumerate} 
+      \item For sufficiently small $k$, but $k = \exp(m)$,
+        the maximum welfare between $A$ and $B$ $(3/4-1/108)m$.
+        This is basically because the union of any two
+        sets constructed as in steps 1 thru 6 is $(3/4-1/108)m$.
+      \item If we do case (a) in the last step,
+        the maximum achievable welfare between $v^A$ and $v^B$ is $m$,
+        by giving $Y$ to Alice and $\bar{Y}$ to Bob.
+      \item In case (b), the maximum achievable welfare
         between $v^A$ and $v^B$ is $(3/4-1/108)m$. This is essentially because the
-        additional sets are no better than another random set.  \item In either
-        case, it is impossible for Alice to distinguish which of her sets is this
-      special one. Ditto for Bob.  \item Therefore, in order to possibly solve the
+        additional sets are no better than another random set.
+      \item In either case, it is impossible for Alice to 
+        distinguish which of her sets is this
+        special one (i.e. $Y$ in case (a) or $Z$ in case (b)).
+        This is because the conditioning related to $S$ is the same as for
+        each of the sets $a_i$, and only the conditioning related to $T$ is different.
+        Ditto for Bob.
+      \item Therefore, in order to possibly solve the
         decision problem, Alice or Bob would have to convey some information about
         every single one of their sets, which is exponential. (This can be made
         into a formal statement, but we won't prove that in this class).
     \end{enumerate}
 
-  Observe that with two rounds, Alice could first send Bob the set $S$ (which is
-  painfully obvious by her construction), and Bob could then determine which set
-  he has that is ``special.''
+  % I'M NOT SURE IF THIS IS ACCURATE::
+  Observe that with two rounds, Alice could first send Bob the set $S$
+  (which is painfully obvious by her construction -- each $a_i$ intersects
+  $S$ way more than it should).
+  Bob could then determine which set he has that is ``special.''
+  (in case (a), his set $\bar{Y}$ should intersect $S$ way less than average,
+  where in case (b), his set $Z$ should intersect $S$ way more than average).
 
   Also observe that for search, Alice will just pick a random $i$ and keep the
   items in $a_i$ and give the rest to Bob. This will get the right welfare
   approximation in both cases (it will just get different absolute welfare in
-  both). 
+  both).
 
 \section{Subadditive Lower Bound for Two Players}
   Consider the following
   construction, which is well-defined for any collection $S$ of subsets: for a
-  given set $T$, say that $T$ is covered by collection $Z$ of sets if $\cup_{z \in
-  Z} z \supseteq T$. Let $f_S(T)$ be the minimum number of sets in $S$ that cover
-  $T$. 
+  given set $T$, say that $T$ is covered by collection 
+  $\mathcal Z$ of sets if $T\subseteq \cup_{z \in\mathcal Z} z$.
+  Let $f_{S}(T)$ be the minimum number of sets in 
+  $S$ that cover $T$. 
 
-  \begin{lemma}$f_S(\cdot)$ is subadditive for all $S$.  \end{lemma} \begin{proof}
+  \begin{lemma}
+    $f_S(\cdot)$ is subadditive for all $S$.
+  \end{lemma}
+  \begin{proof}
     Let $Z$ cover $T$ and $Y$ cover $U$. Then clearly $Z \cup Y$ covers $T \cup
     U$. Therefore, if $Z$ and $Y$ are the minimum covers of $T$ and $U$
     respectively, we have that $f_S(T \cup U) \leq |Z|+|Y| = f_S(T) + f_S(U)$.
@@ -489,41 +567,50 @@
 
   Observe that $f_S^\ell(\cdot)$ might not be well-defined (the first two bullets
   might conflict). But for $S$ with the right properties, it is always
-  well-defined. 
+  well-defined. Also observe that $f^\ell_S(X) + f^\ell_S(\bar{X}) = \ell$
+  for any $S$ and $X$.
 
   \begin{definition}[$\ell$-sparse] We say that $\mathcal{S}$ is
   \emph{$\ell$-sparse} if for all $T_1,\ldots, T_{\ell-1} \in \mathcal{S}$,
   $\cup_j T_j \neq M$. \end{definition}
+  That is, $\mathcal{S}$ is $\ell$-sparse if there
+  does not exist $\ell-1$ elements of $\mathcal{S}$ whose union is the entire
+  ground set $M$. 
 
   \begin{lemma} If $\mathcal{S}$ is $\ell$-sparse, then
   $f^\ell_\mathcal{S}(\cdot)$ is well-defined.  \end{lemma}
 
   \begin{proof} It is clear that $f^\ell_\mathcal{S}(X)$ is always defined at
     least once. The only way in which $f^\ell_\mathcal{S}(X)$ could be defined
-    multiple times is if $\sigma_\mathcal{S}(X) < \frac{\ell}{2}$ (in which case
-    $f^\ell_\mathcal{S}(X) = \sigma_\mathcal{S}(X)$) and
-    $\sigma_\mathcal{S}(\overline{X}) < \frac{\ell}{2}$ (in which case
-    $f^\ell_\mathcal{S}(X) = \ell - \sigma_\mathcal{S}(\overline{X})$). 
+    multiple times is if $f_\mathcal{S}(X) < \frac{\ell}{2}$ (in which case
+    $f^\ell_\mathcal{S}(X) = f_\mathcal{S}(X)$) and
+    $f_\mathcal{S}(\overline{X}) < \frac{\ell}{2}$ (in which case
+    $f^\ell_\mathcal{S}(X) = \ell - f_\mathcal{S}(\overline{X})$). 
 
-  So assume for contradiction that both events hold, and let $X \subseteq
-  \cup_{i=1}^{\ell/2-1} T_i$, and $\overline{X} \subseteq \cup_{i=1}^{\ell/2-1}
-  U_i$, where each $T_i, U_i \in \mathcal{S}$. Note that $\sigma_\mathcal{S}(X),
-  \sigma_\mathcal{S}(\overline{X}) < \ell/2$ implies that such $T_i, U_i$ must
-  exist. But now consider that we can write $M = X \cup \overline{X}$ as a union
-  of $\leq \ell -2$ elements of $\mathcal{S}$, contradicting that $\mathcal{S}$ is
-  $\ell$-sparse.  \end{proof} That is, $\mathcal{S}$ is $\ell$-sparse if there
-  does not exist $\ell-1$ elements of $\mathcal{S}$ whose union is the entire
-  ground set $M$. 
+    So assume for contradiction that both events hold, and let $X \subseteq
+    \cup_{i=1}^{\ell/2-1} T_i$, and $\overline{X} \subseteq \cup_{i=1}^{\ell/2-1}
+    U_i$, where each $T_i, U_i \in \mathcal{S}$
+    (such sets exist by the definition of $f_S$ and the assumption that
+    $f_\mathcal{S}(X), f_\mathcal{S}(\overline{X}) < \ell/2$).
+    But now consider that we can write $M = X \cup \overline{X}$ as a union
+    of $\leq \ell -2$ elements of $\mathcal{S}$, contradicting that $\mathcal{S}$ is
+    $\ell$-sparse.  
+  \end{proof} 
 
-  \begin{proposition} If $\mathcal{S}$ is $\ell$-sparse, then
-  $f^\ell_\mathcal{S}(\cdot)$ is monotone and subadditive.  \end{proposition}
+  \begin{proposition} 
+    If $\mathcal{S}$ is $\ell$-sparse, then
+    $f^\ell_\mathcal{S}(\cdot)$ is monotone and subadditive.
+  \end{proposition}
 
   (Proof omitted). So now we have a class of subadditive functions. We now wish to
   come up with a hard instance. To this effect, we need one further definition.
 
-  \begin{definition}[\cite{KleitmanS73}] A collection $\mathcal{S} = \{S_1,\ldots,
-  S_k\}$ is \emph{$\ell$-independent} if $\{T_1,\ldots, T_k\}$ is $\ell$-sparse
-  whenever $T_i \in \{S_i, \overline{S_i}\}$.  \end{definition}
+  \begin{definition}[\cite{KleitmanS73}] 
+    A collection $\mathcal{S} = \{S_1,\ldots,
+    S_k\}$ is \emph{$\ell$-independent} if 
+    $\{T_1,\ldots, T_k\}$ is $\ell$-sparse
+    whenever $T_i \in \{S_i, \overline{S_i}\}$.
+  \end{definition}
 
   \begin{proposition}\label{prop:lindependent}Let $\mathcal{S}$ be an
   $\ell$-independent collection with $|\mathcal{S}| = k$. Then any deterministic
@@ -551,16 +638,21 @@
   On the other hand, if there exists an $i$ such that $a_i \neq b_i$ (without loss
   of generality say that $a_i = 1$ and $b_i = 0$), we claim that welfare $2\ell-2$
   is achievable. To see this, consider the allocation which awards
-  $\overline{S_i}$ to Alice and $S_i$ to Bob. Indeed, $f^\ell_\mathcal{A}(S_i) =
-  1$ (as $S_i \in \mathcal{A}$), so $f^\ell_\mathcal{A}(\overline{S_i}) = \ell -
-  1$. Similarly, $f_B(\overline{S_i}) = 1$, so $f_B(S_i) = \ell - 1$, achieving
-  total welfare $2(\ell-1)$.\footnote{
-    As an aside, note that welfare exceeding
-    $2\ell-2$ is not possible, as Alice and Bob each value all non-empty sets at
-    least at $1$, and therefore value all strict subsets of $M$ at most at $\ell-1$
-    by \ref{lminus}. Therefore, the only way Alice or Bob could have value exceeding
-    $\ell-1$ is to get all of $M$, meaning that hte other player receives value
-    $0$. } 
+  $\overline{S_i}$ to Alice and $S_i$ to Bob. Indeed,
+  $f_\mathcal{A}(S_i) = 1$ (as $S_i \in \mathcal{A}$),
+  so $f^\ell_\mathcal{A}(\overline{S_i}) = \ell - f_\mathcal A(S_i) = \ell - 1$.
+  Similarly, $f_B(\overline{S_i}) = 1$, so 
+  $f_\mathcal B(S_i) = \ell - f_\mathcal B (\overline{S_i}) = \ell - 1$,
+  achieving total welfare $2(\ell-1)$.
+  (note\footnote{
+    As an aside, note that welfare exceeding $2\ell-2$ is not possible.
+    Proof: for all nonempty $X$, $f_S(X)$ is at
+    least $1$, and therefore $f^\ell_S(X)$ is at most $\ell-1$
+    by the second bullet point in the definition of $f^\ell_S$.
+    Therefore, the only way Alice or Bob could have value exceeding
+    $\ell-1$ is to get all of $M$, meaning that the other player receives value
+    $0$.
+  })
 
   So assume for contradiction that a deterministic $\frac{1}{2} +
   \frac{1}{2\ell-3} > \frac{\ell}{2\ell-2}$-approximation exists to the optimal
