@@ -9,6 +9,7 @@
 
 \renewcommand{\P}[1]{\mathds{P}\left[{#1}\right]}
 \newcommand{\E}[1]{\mathds{E}\left[{#1}\right]}
+\newcommand{\1}[1]{\mathds{1}[{#1}]}
 
 \begin{document}
 
@@ -442,13 +443,25 @@
   $T_i^\ell \cap T_j^{\ell'}= \emptyset$. 
 
   % CHECK THIIIIS
-  Consider a fixed set of distinct indices $\ell_1,\ldots, \ell_n$. Then the
-  expected number of items in their union is exactly $1-(1-1/n)^n \cdot m$
-  (because for any item to miss the union, it needs to be missed independently $n$
-  times). The probability that it deviates from its expectation by more than
+  Consider a fixed set of distinct indices $\ell_1,\ldots, \ell_n$.
+  We have: 
+  \begin{align*}
+    \E{\ \left|\bigcup_iT_i^{\ell_i}\right|\ }
+    & = \sum_{j\in M} \P{j\in T_i^{\ell_i}\text{ for some $i$}} \\
+    & = m\left(1 - \P{j\ne T_i^{\ell_i}\text{ for all $i$}}\right) \\
+    & = m\left(1 - (1-1/n)^n \right) \\
+  \end{align*}
+  % (that is, for any item to miss the union, 
+  % it needs to be missed independently $n$ times). 
+  Because the indicator random variables for the events
+  ``$j\in T_i^{\ell_i}$ for some $i$'' are independent for different $j$,
+  we can apply a Chernoff bound.
+  Namely, the probability that the size of the union deviates from 
+  its expectation by more than
   $\varepsilon \cdot m$ is upper bounded by $e^{-\varepsilon^2 m/2}$. So taking a
   union bound over all $\leq k^n$ distinct indices, we get that this holds for all
-  indices with probability $e^{-\varepsilon^2 m/2 + n\log k}$. Setting $n \log k =
+  indices with probability 
+  $k^ne^{-\varepsilon^2 m/2} = e^{-\varepsilon^2 m/2 + n\log k}$. Setting $n \log k =
   \varepsilon^2 m/8$ results in $k \leq e^{O(m\varepsilon^2/n)}$. We could, for
   instance, let $\varepsilon = 1/\sqrt{n}$, giving the bound in the theorem
   statement (but there are other interesting choices of $\varepsilon$ too).
